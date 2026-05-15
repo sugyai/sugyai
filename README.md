@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## AI Features
+
+This project includes AI-powered translation and explanation features for Talmudic text.
+
+To use these features, you must provide a Gemini API key:
+
+1. Create a `.env` file in the root directory.
+2. Add your key: `GEMINI_API_KEY=your_actual_api_key_here`
+
+The AI is configured to maintain the original Hebrew/Aramaic script for technical terms (like משנה, גמרא, שמע) instead of transliterating them into English.
+

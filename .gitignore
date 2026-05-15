@@ -33,6 +33,12 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# GCP
+google-cloud-sdk/
+gcloud.tar.gz
+google-cloud-cli-*.tar.gz
+gcp-sa-key.json
+
 # vercel
 .vercel
 
