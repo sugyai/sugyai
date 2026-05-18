@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { getTalmudText, SefariaTextResponse, SefariaCommentary, deTransliterate, extractDivreiHamaschil, getHebrewBooksUrl } from '@/lib/sefaria';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -35,9 +36,10 @@ const POPULAR_TRACTATES = [
 
 interface TalmudViewerProps {
   initialRef?: string;
+  onInteract?: () => void;
 }
 
-export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewerProps) {
+export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }: TalmudViewerProps) {
   const [currentRef, setCurrentRef] = useState(initialRef);
   const [data, setData] = useState<SefariaTextResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
   // AI Feature states
   const [aiTranslations, setAiTranslations] = useState<Record<string, string>>({});
   const [translatingRefs, setTranslatingRefs] = useState<Record<string, boolean>>({});
+  const [explainingSegments, setExplainingSegments] = useState<Record<string, boolean>>({});
   const [expandedCommentary, setExpandedCommentary] = useState<string | null>(null);
 
   // Picker states
@@ -55,6 +58,10 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
   const [pickerTractate, setPickerTractate] = useState('Berakhot');
   const [pickerDaf, setPickerDaf] = useState('2');
   const [pickerSide, setPickerSide] = useState<'a' | 'b'>('a');
+
+  const handleInteraction = useCallback(() => {
+    onInteract?.();
+  }, [onInteract]);
 
   useEffect(() => {
     async function fetchData() {
@@ -65,8 +72,8 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
         setError(null);
         setSelectedIndex(0); 
         
-        // Update picker states to match new ref
-        const match = currentRef.match(/^(.*?)\s(\d+)([ab])$/);
+        // Sync picker states directly after data fetch to avoid extra effect
+        const match = result.ref.match(/^(.*?)\s(\d+)([ab])$/);
         if (match) {
             setPickerTractate(match[1]);
             setPickerDaf(match[2]);
@@ -89,6 +96,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
   }, [data]);
 
   const handleAiTranslate = async (comm: SefariaCommentary) => {
+    handleInteraction();
     if (aiTranslations[comm.ref]) return;
 
     setTranslatingRefs(prev => ({ ...prev, [comm.ref]: true }));
@@ -98,9 +106,9 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'translate', text: comm.he, context: comm.index_title })
       });
-      const data = await response.json();
-      if (data.result) {
-        setAiTranslations(prev => ({ ...prev, [comm.ref]: data.result }));
+      const resData = await response.json();
+      if (resData.result) {
+        setAiTranslations(prev => ({ ...prev, [comm.ref]: resData.result }));
       }
     } catch (err) {
       console.error('AI Translation failed:', err);
@@ -109,7 +117,36 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
     }
   };
 
-  const getCommentariesForSegment = (index: number) => {
+  const handleAiExplain = async () => {
+    handleInteraction();
+    if (!data) return;
+    
+    const segmentId = `explain-${data.ref}-${selectedIndex}`;
+    if (aiTranslations[segmentId]) return;
+
+    setExplainingSegments(prev => ({ ...prev, [segmentId]: true }));
+    try {
+      const response = await fetch('/api/ai-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'explain', 
+          text: data.he[selectedIndex], 
+          context: data.ref 
+        })
+      });
+      const resData = await response.json();
+      if (resData.result) {
+        setAiTranslations(prev => ({ ...prev, [segmentId]: resData.result }));
+      }
+    } catch (err) {
+      console.error('AI Explanation failed:', err);
+    } finally {
+      setExplainingSegments(prev => ({ ...prev, [segmentId]: false }));
+    }
+  };
+
+  const getCommentariesForSegment = useCallback((index: number) => {
     if (!data?.commentary) return [];
     
     const segmentNum = index + 1;
@@ -120,11 +157,18 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
       const matchesAnchorRef = c.anchorRef === segmentRef;
       const matchesExpanded = c.anchorRefExpanded?.includes(segmentRef);
       const matchesAnchor = c.anchor === segmentRef || c.anchor?.startsWith(segmentRef);
-      return matchesAnchorRef || matchesExpanded || matchesAnchor;
+      
+      // Exclude cross-reference sections
+      const isTanakh = c.category === 'Tanakh';
+      const isTalmud = c.category === 'Talmud';
+      const isMishnah = c.category === 'Mishnah';
+      
+      return (matchesAnchorRef || matchesExpanded || matchesAnchor) && !isTanakh && !isTalmud && !isMishnah;
     });
-  };
+  }, [data]);
 
   const navigateToRef = () => {
+    handleInteraction();
     const newRef = `${pickerTractate} ${pickerDaf}${pickerSide}`;
     setCurrentRef(newRef);
     setShowPicker(false);
@@ -135,24 +179,52 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
     return getHebrewBooksUrl(data.ref);
   }, [data]);
 
+  const segmentCommentaries = useMemo(() => {
+    const rawCommentaries = getCommentariesForSegment(selectedIndex);
+    
+    // Sort by age (compDate) then by internal Sefaria order (commentaryNum)
+    return [...rawCommentaries].sort((a, b) => {
+        // Get start date, default to a high number (3000) if missing so they appear at the end
+        const dateA = a.compDate ? a.compDate[0] : 3000;
+        const dateB = b.compDate ? b.compDate[0] : 3000;
+
+        if (dateA !== dateB) {
+            return dateA - dateB;
+        }
+
+        // Secondary sort by internal numbering (keeps Rashi segments in order)
+        const numA = a.commentaryNum || 0;
+        const numB = b.commentaryNum || 0;
+        if (numA !== numB) {
+            return numA - numB;
+        }
+
+        // Tertiary sort by title for stability
+        return a.index_title.localeCompare(b.index_title);
+    });
+  }, [selectedIndex, getCommentariesForSegment]);
+
   if (loading && !data) {
     return (
-      <div className="flex items-center justify-center p-24 bg-white dark:bg-black h-[calc(100vh-160px)]">
+      <div className="flex items-center justify-center p-24 bg-white dark:bg-black h-full">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
       </div>
     );
   }
 
-  const segmentCommentaries = getCommentariesForSegment(selectedIndex);
+  const activeSegmentId = data ? `explain-${data.ref}-${selectedIndex}` : '';
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] w-full bg-white dark:bg-black overflow-hidden relative">
+    <div className="flex flex-col h-full w-full bg-white dark:bg-black overflow-hidden relative">
       {/* Sleek Header / Navigation */}
-      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-3 flex items-center justify-between z-40 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-3 flex items-center justify-between z-40 shadow-sm flex-shrink-0">
         <div className="flex items-center gap-4">
             <button 
-                onClick={() => setShowPicker(!showPicker)}
-                className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 px-4 py-2 rounded-lg transition-all border border-transparent hover:border-amber-400/50 group"
+                onClick={() => {
+                    handleInteraction();
+                    setShowPicker(!showPicker);
+                }}
+                className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-all border border-transparent hover:border-amber-400/50 group"
             >
                 <span className="text-amber-600 dark:text-amber-400 font-bold font-serif text-lg">
                     {data?.ref || currentRef}
@@ -160,21 +232,21 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
                 <span className={cn("text-zinc-400 transition-transform", showPicker ? "rotate-180" : "")}>▼</span>
             </button>
             
-            <div className="hidden lg:flex items-center gap-2 text-zinc-400 text-[10px] font-black uppercase tracking-[0.2em]">
+            <div className="hidden lg:flex items-center gap-2 text-zinc-400 text-xs font-black uppercase tracking-[0.2em]">
                 <span>Bavli</span>
                 <span>•</span>
                 <span>{data?.ref.split(' ')[0]}</span>
             </div>
             
             <div className="hidden xl:flex items-center gap-3 ml-4 pl-4 border-l border-zinc-200 dark:border-zinc-800">
-                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight max-w-[200px]">
-                    Translations and hosting aren't free. Help support the token costs.
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight max-w-[200px]">
+                    Help support the token costs.
                 </p>
                 <a 
                     href="https://www.paypal.com/donate/?hosted_button_id=ELNJNFRAVUPQY" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-black uppercase tracking-widest transition-all shadow-sm shadow-emerald-500/20 active:scale-[0.98]"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-black uppercase tracking-widest transition-all shadow-sm shadow-emerald-500/20 active:scale-[0.98]"
                 >
                     <span>☕</span> Donate
                 </a>
@@ -184,8 +256,11 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
         <div className="flex items-center gap-3">
             {hbPdfUrl && (
                 <button 
-                    onClick={() => setShowPdfModal(true)}
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-md text-[10px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 transition-all border border-zinc-200 dark:border-zinc-700 hover:border-amber-500/50"
+                    onClick={() => {
+                        handleInteraction();
+                        setShowPdfModal(true);
+                    }}
+                    className="hidden md:flex items-center gap-2 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-md text-xs font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 transition-all border border-zinc-200 dark:border-zinc-700 hover:border-amber-500/50"
                 >
                     <span className="text-amber-600">📄</span> View Vilna Layout
                 </button>
@@ -195,6 +270,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
 
             <button 
                 onClick={() => {
+                    handleInteraction();
                     const match = currentRef.match(/^(.*?)\s(\d+)([ab])$/);
                     if (match) {
                         const daf = parseInt(match[2]);
@@ -210,6 +286,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
             </button>
             <button 
                 onClick={() => {
+                    handleInteraction();
                     const match = currentRef.match(/^(.*?)\s(\d+)([ab])$/);
                     if (match) {
                         const daf = parseInt(match[2]);
@@ -260,11 +337,17 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
                             <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3 block">Side</label>
                             <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
                                 <button 
-                                    onClick={() => setPickerSide('a')}
+                                    onClick={() => {
+                                        handleInteraction();
+                                        setPickerSide('a');
+                                    }}
                                     className={cn("flex-1 py-2 rounded-lg text-xs font-bold transition-all", pickerSide === 'a' ? "bg-white dark:bg-zinc-700 shadow-sm text-amber-600" : "text-zinc-500")}
                                 >a (א)</button>
                                 <button 
-                                    onClick={() => setPickerSide('b')}
+                                    onClick={() => {
+                                        handleInteraction();
+                                        setPickerSide('b');
+                                    }}
                                     className={cn("flex-1 py-2 rounded-lg text-xs font-bold transition-all", pickerSide === 'b' ? "bg-white dark:bg-zinc-700 shadow-sm text-amber-600" : "text-zinc-500")}
                                 >b (ב)</button>
                             </div>
@@ -290,10 +373,10 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
       )}
 
       {/* Main Study Interface */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left Pane: Main Text (Gemara) */}
-        <div className="w-1/3 overflow-y-auto border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right" dir="rtl">
-          <div className="p-4 space-y-2">
+        <div className="w-1/3 flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right" dir="rtl">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
             {data?.he.map((heLine, index) => (
               <div 
                 key={index}
@@ -304,6 +387,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
                     : "border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-900"
                 )}
                 onClick={() => {
+                  handleInteraction();
                   setSelectedIndex(index);
                   setExpandedCommentary(null);
                 }}
@@ -327,10 +411,30 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
 
         {/* Middle Pane: Parallel Translation */}
         <div className="w-1/3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 sticky top-0 z-20 h-[53px] flex items-center">
+          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex-shrink-0 h-[53px] flex items-center justify-between">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Translation: Segment {selectedIndex + 1}</h3>
+            
+            {!aiTranslations[activeSegmentId] && (
+                <button 
+                    onClick={handleAiExplain}
+                    disabled={explainingSegments[activeSegmentId]}
+                    className={cn(
+                        "flex items-center gap-1.5 px-2 py-1 rounded-md transition-all border disabled:opacity-80",
+                        explainingSegments[activeSegmentId]
+                          ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50 animate-pulse"
+                          : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50 hover:bg-emerald-200 dark:hover:bg-emerald-900/60"
+                    )}
+                >
+                    <span className="text-xs leading-none">
+                        {explainingSegments[activeSegmentId] ? '⏳' : '✨'}
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-tighter">
+                        {explainingSegments[activeSegmentId] ? 'Explaining...' : 'AI Explain'}
+                    </span>
+                </button>
+            )}
           </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
             <section className="animate-in fade-in slide-in-from-top-2 duration-500">
               <h4 className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase mb-4 tracking-widest flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
@@ -342,19 +446,19 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
               />
             </section>
 
-            {aiTranslations[`explain-${selectedIndex}`] && (
+            {aiTranslations[activeSegmentId] && (
               <section className="animate-in zoom-in-95 duration-300">
                 <h4 className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase mb-4 tracking-widest flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                   AI Deep Insight
                 </h4>
-                <div className="text-lg text-zinc-700 dark:text-zinc-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-5 rounded-xl border border-emerald-100 dark:border-emerald-900/50 leading-relaxed shadow-inner">
-                  {aiTranslations[`explain-${selectedIndex}`]}
+                <div className="text-lg text-zinc-700 dark:text-zinc-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-5 rounded-xl border border-emerald-100 dark:border-emerald-900/50 leading-relaxed shadow-inner prose prose-zinc dark:prose-invert max-w-none">
+                  <ReactMarkdown>{aiTranslations[activeSegmentId]}</ReactMarkdown>
                 </div>
               </section>
             )}
 
-            <div className="pt-8 border-t border-zinc-100 dark:border-zinc-900 mt-auto">
+            <div className="pt-8 border-t border-zinc-100 dark:border-zinc-900 mt-auto flex-shrink-0">
                <p className="text-[10px] text-zinc-400 text-center italic uppercase tracking-tighter">Select segment on left to sync</p>
             </div>
           </div>
@@ -362,11 +466,11 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
 
         {/* Right Pane: Persistent Commentary List */}
         <div className="w-1/3 bg-zinc-50/50 dark:bg-zinc-950 flex flex-col">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-20 h-[53px] flex items-center justify-between">
+          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-shrink-0 h-[53px] flex items-center justify-between">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Commentaries ({segmentCommentaries.length})</h3>
           </div>
           
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
             <div className="p-4 space-y-4">
               {segmentCommentaries.length > 0 ? (
                 segmentCommentaries.map((comm, i) => {
@@ -392,7 +496,10 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
                         : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 hover:border-amber-200 dark:hover:border-amber-800 hover:shadow-sm overflow-hidden"
                     )}>
                       <button 
-                        onClick={() => setExpandedCommentary(isExpanded ? null : comm.ref)}
+                        onClick={() => {
+                            handleInteraction();
+                            setExpandedCommentary(isExpanded ? null : comm.ref);
+                        }}
                         className={cn(
                           "w-full p-4 flex flex-col items-start gap-2 text-left transition-colors z-20",
                           isExpanded ? "sticky top-0 bg-white dark:bg-zinc-900 border-b border-amber-100 dark:border-amber-800/50 rounded-none" : "rounded-xl"
@@ -404,11 +511,16 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
                                     "w-1 h-5 rounded-full transition-colors",
                                     isExpanded ? "bg-amber-500" : "bg-zinc-200 dark:bg-zinc-700"
                                 )} />
-                                <span className="text-[10px] font-black text-amber-800 dark:text-amber-500 uppercase tracking-widest">{title}</span>
+                                <div className="flex flex-col">
+                                    <span className="text-[13px] font-black text-amber-800 dark:text-amber-500 uppercase tracking-widest leading-none">{title}</span>
+                                    {comm.compDate && (
+                                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">c. {comm.compDate[0]} CE</span>
+                                    )}
+                                </div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <span className={cn(
-                                    "text-zinc-400 transition-transform duration-300 text-[10px]",
+                                    "text-zinc-400 transition-transform duration-300 text-xs",
                                     isExpanded ? "rotate-180" : ""
                                 )}>▼</span>
                                 
@@ -426,10 +538,10 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
                                           : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50 hover:bg-amber-200 dark:hover:bg-amber-900/60"
                                       )}
                                     >
-                                      <span className="text-[10px] leading-none">
+                                      <span className="text-xs leading-none">
                                         {translatingRefs[comm.ref] ? '⏳' : '✨'}
                                       </span>
-                                      <span className="text-[9px] font-black uppercase tracking-tighter">
+                                      <span className="text-[10px] font-black uppercase tracking-tighter">
                                           {translatingRefs[comm.ref] ? 'Translating...' : 'AI Translate'}
                                       </span>
                                     </button>
@@ -439,8 +551,8 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
                         
                         {dh && (
                             <div className={cn(
-                                "font-serif text-sm font-bold text-zinc-700 dark:text-zinc-200 transition-opacity",
-                                isExpanded ? "opacity-100" : "opacity-60"
+                                "font-serif text-lg font-bold text-zinc-800 dark:text-zinc-100 transition-opacity mt-1",
+                                isExpanded ? "opacity-100" : "opacity-70"
                             )} dir="rtl">
                                 {dh}
                             </div>
@@ -456,8 +568,8 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a' }: TalmudViewe
                           )}
 
                           {aiTranslations[comm.ref] && (
-                            <div className="text-lg text-amber-950 dark:text-amber-200 bg-amber-50/50 dark:bg-amber-950/30 p-5 rounded-xl border border-amber-200/50 dark:border-amber-800/50 italic leading-relaxed shadow-inner">
-                              {aiTranslations[comm.ref]}
+                            <div className="text-lg text-amber-950 dark:text-amber-200 bg-amber-50/50 dark:bg-amber-950/30 p-5 rounded-xl border border-amber-200/50 dark:border-amber-800/50 italic leading-relaxed shadow-inner prose prose-amber dark:prose-invert max-w-none">
+                              <ReactMarkdown>{aiTranslations[comm.ref]}</ReactMarkdown>
                             </div>
                           )}
                         </div>

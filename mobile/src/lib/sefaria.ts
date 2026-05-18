@@ -17,9 +17,9 @@ export interface SefariaCommentary {
   author?: string;
   compDate?: [number, number];
   commentaryNum?: number;
-  anchor?: string; // Legacy property if any
-  anchorRef?: string; // The primary segment reference this commentary points to
-  anchorRefExpanded?: string[]; // All segments this commentary covers
+  anchor?: string;
+  anchorRef?: string;
+  anchorRefExpanded?: string[];
 }
 
 const TRANSLITERATION_MAP: Record<string, string> = {
@@ -32,7 +32,7 @@ const TRANSLITERATION_MAP: Record<string, string> = {
   'halakha': 'הלכה',
   'halakhah': 'הלכה',
   'mitzvah': 'מצווה',
-  'mitzvot': 'מצוות',
+  'mitzvot': 'מצווות',
   'Berakhot': 'ברכות',
   'tanna': 'תנא',
   'baraita': 'ברייתא',
@@ -48,38 +48,24 @@ const TRANSLITERATION_MAP: Record<string, string> = {
 
 export function deTransliterate(input: string | string[]): string {
   if (!input) return '';
-  
-  // If input is an array, join it into a single string (common in Sefaria data)
   let text = Array.isArray(input) ? input.join(' ') : String(input);
-  
-  // Replace words in <i> tags if they are in our map
   text = text.replace(/<i>([^<]+)<\/i>/g, (match, word) => {
-    // Clean the word of trailing punctuation for lookup
     const cleanWord = word.replace(/[.,;?!]$/, '').trim();
     const punctuation = word.slice(word.lastIndexOf(cleanWord) + cleanWord.length);
-    
-    // Case-insensitive lookup
     const key = Object.keys(TRANSLITERATION_MAP).find(
       k => k.toLowerCase() === cleanWord.toLowerCase()
     );
-    
     if (key) {
-      return `<span dir="rtl" class="font-serif text-amber-800">${TRANSLITERATION_MAP[key]}</span>${punctuation}`;
+      return `${TRANSLITERATION_MAP[key]}${punctuation}`;
     }
     return match;
   });
-  
   return text;
 }
 
 export function extractDivreiHamaschil(he: string | string[]): string {
   if (!he) return '';
-
-  // Sefaria text can be a string or an array of strings
   const textContent = Array.isArray(he) ? he.join(' ') : String(he);
-
-  // 1. STRATEGY: Look for bold tags first (very common for DH in Sefaria)
-  // We look for <b>...</b> or <strong>...</strong>
   const boldMatch = textContent.match(/<(b|strong)>([\s\S]*?)<\/\1>/i);
   if (boldMatch && boldMatch.index !== undefined && boldMatch.index < 50) {
       const dh = boldMatch[2].replace(/<[^>]*>/g, '').trim();
@@ -87,26 +73,15 @@ export function extractDivreiHamaschil(he: string | string[]): string {
           return dh;
       }
   }
-
-  // 2. STRATEGY: Look for common separators (dot, dash, colon, etc.)
-  // Remove HTML tags first to analyze text content for punctuation
   const cleanText = textContent.replace(/<[^>]*>/g, '').trim();
   const match = cleanText.match(/\.|–|:|וכו/);
-
   if (match && match.index !== undefined && match.index > 0) {
-    // CRITICAL: If the delimiter is too far in (e.g. > 150 chars), it's probably not a DH
     if (match.index > 150) return '';
-
     const isVekul = cleanText.substring(match.index, match.index + 3) === 'וכו';
     const dh = cleanText.substring(0, match.index + (isVekul ? 3 : 0)).trim();
-
-    // One last check: if the extracted DH is more than 70% of the whole text, 
-    // it's likely just a short commentary without a DH
     if (dh.length > cleanText.length * 0.7) return '';
-
     return dh;
   }
-
   return '';
 }
 
@@ -120,19 +95,13 @@ const HB_TRACTATE_MAP: Record<string, number> = {
 };
 
 export function getHebrewBooksUrl(ref: string): string | null {
-  // Expected format: "Tractate 2a"
   const match = ref.match(/^(.*?)\s(\d+)([ab])$/);
   if (!match) return null;
-
   const tractateName = match[1].replace(/\s/g, '_');
   const dafNum = match[2];
   const side = match[3];
-  
   const hbId = HB_TRACTATE_MAP[tractateName];
   if (!hbId) return null;
-
-  // HebrewBooks format: daf=2 for 2a, daf=2b for 2b. No ammud parameter.
   const dafParam = side === 'b' ? `${dafNum}b` : dafNum;
-
   return `https://hebrewbooks.org/shas.aspx?mesechta=${hbId}&daf=${dafParam}`;
 }

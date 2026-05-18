@@ -5,6 +5,18 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = 'gemini-3-flash-preview';
 const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3-pro-preview';
 
+interface GeminiResponse {
+  text?: string | (() => string);
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+    finishReason?: string;
+  }>;
+}
+
 async function callGemini(prompt: string) {
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not configured');
@@ -25,26 +37,28 @@ async function callGemini(prompt: string) {
       },
     });
 
-    // Handle potential multi-part or differently structured response
+    const responseData = response as unknown as GeminiResponse;
     let resultText = '';
-    if (typeof response.text === 'string') {
-      resultText = response.text;
-    } else if (typeof response.text === 'function') {
-      resultText = (response as any).text();
-    } else if ((response as any).candidates?.[0]?.content?.parts?.[0]?.text) {
-      resultText = (response as any).candidates[0].content.parts[0].text;
+    
+    if (typeof responseData.text === 'string') {
+      resultText = responseData.text;
+    } else if (typeof responseData.text === 'function') {
+      resultText = responseData.text();
+    } else if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) {
+      resultText = responseData.candidates[0].content.parts[0].text;
     }
 
-    console.log(`[AI] ${GEMINI_MODEL} request completed. Response length: ${resultText.length} chars. Finish Reason: ${(response as any).candidates?.[0]?.finishReason || 'unknown'}`);
+    console.log(`[AI] ${GEMINI_MODEL} request completed. Response length: ${resultText.length} chars. Finish Reason: ${responseData.candidates?.[0]?.finishReason || 'unknown'}`);
     
     if (resultText.length < 100 && prompt.length > 500) {
        console.warn(`[AI] Warning: Response seems unusually short (${resultText.length} chars) compared to prompt (${prompt.length} chars).`);
     }
 
     return resultText;
-  } catch (error: any) {
-    console.warn(`Primary model ${GEMINI_MODEL} failed:`, error);
-    if ((error.message && (error.message.includes('busy') || error.message.includes('503'))) && GEMINI_FALLBACK_MODEL) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    console.warn(`Primary model ${GEMINI_MODEL} failed:`, err);
+    if ((err.message && (err.message.includes('busy') || err.message.includes('503'))) && GEMINI_FALLBACK_MODEL) {
       console.log(`[AI] Attempting to use fallback model: ${GEMINI_FALLBACK_MODEL}`);
       try {
         const fallbackAi = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
@@ -59,13 +73,15 @@ async function callGemini(prompt: string) {
           },
         });
         
+        const fallbackData = fallbackResponse as unknown as GeminiResponse;
         let fallbackResult = '';
-        if (typeof fallbackResponse.text === 'string') {
-          fallbackResult = fallbackResponse.text;
-        } else if (typeof fallbackResponse.text === 'function') {
-          fallbackResult = (fallbackResponse as any).text();
-        } else if ((fallbackResponse as any).candidates?.[0]?.content?.parts?.[0]?.text) {
-          fallbackResult = (fallbackResponse as any).candidates[0].content.parts[0].text;
+        
+        if (typeof fallbackData.text === 'string') {
+          fallbackResult = fallbackData.text;
+        } else if (typeof fallbackData.text === 'function') {
+          fallbackResult = fallbackData.text();
+        } else if (fallbackData.candidates?.[0]?.content?.parts?.[0]?.text) {
+          fallbackResult = fallbackData.candidates[0].content.parts[0].text;
         }
 
         console.log(`[AI] Fallback model ${GEMINI_FALLBACK_MODEL} completed. Response length: ${fallbackResult.length} chars.`);
