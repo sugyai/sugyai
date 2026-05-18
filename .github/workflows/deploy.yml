@@ -41,3 +41,11 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --set-env-vars="GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}"
+
+      - name: Purge Firebase Cache
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.GCP_SA_KEY }}'
+          projectId: ${{ env.PROJECT_ID }}
+          channelId: live
