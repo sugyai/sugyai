@@ -2,6 +2,7 @@
 google-cloud-sdk/
 .next/
 node_modules/
+mobile/
 npm-debug.log
 .git
 .env
