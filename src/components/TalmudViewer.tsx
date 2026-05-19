@@ -51,6 +51,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
   const [translatingRefs, setTranslatingRefs] = useState<Record<string, boolean>>({});
   const [explainingSegments, setExplainingSegments] = useState<Record<string, boolean>>({});
   const [expandedCommentary, setExpandedCommentary] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'gemara' | 'translation' | 'commentary'>('gemara');
 
   // Picker states
   const [showPicker, setShowPicker] = useState(false);
@@ -373,9 +374,12 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
       )}
 
       {/* Main Study Interface */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden flex-col lg:flex-row">
         {/* Left Pane: Main Text (Gemara) */}
-        <div className="w-1/3 flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right" dir="rtl">
+        <div className={cn(
+            "w-full lg:w-1/3 flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right",
+            activeTab === 'gemara' ? "flex" : "hidden lg:flex"
+        )} dir="rtl">
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
             {data?.he.map((heLine, index) => (
               <div 
@@ -390,6 +394,9 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                   handleInteraction();
                   setSelectedIndex(index);
                   setExpandedCommentary(null);
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                      setActiveTab('translation');
+                  }
                 }}
               >
                 <div 
@@ -410,7 +417,10 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         </div>
 
         {/* Middle Pane: Parallel Translation */}
-        <div className="w-1/3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col">
+        <div className={cn(
+            "w-full lg:w-1/3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col",
+            activeTab === 'translation' ? "flex" : "hidden lg:flex"
+        )}>
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex-shrink-0 h-[53px] flex items-center justify-between">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Translation: Segment {selectedIndex + 1}</h3>
             
@@ -422,7 +432,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                         "flex items-center gap-1.5 px-2 py-1 rounded-md transition-all border disabled:opacity-80",
                         explainingSegments[activeSegmentId]
                           ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50 animate-pulse"
-                          : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50 hover:bg-emerald-200 dark:hover:bg-emerald-900/60"
+                          : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-amber-800/50 hover:bg-emerald-200 dark:hover:bg-emerald-900/60"
                     )}
                 >
                     <span className="text-xs leading-none">
@@ -465,7 +475,10 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         </div>
 
         {/* Right Pane: Persistent Commentary List */}
-        <div className="w-1/3 bg-zinc-50/50 dark:bg-zinc-950 flex flex-col">
+        <div className={cn(
+            "w-full lg:w-1/3 bg-zinc-50/50 dark:bg-zinc-950 flex flex-col",
+            activeTab === 'commentary' ? "flex" : "hidden lg:flex"
+        )}>
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-shrink-0 h-[53px] flex items-center justify-between">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Commentaries ({segmentCommentaries.length})</h3>
           </div>
@@ -586,6 +599,37 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Tab Navigation */}
+      <div className="lg:hidden flex border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-shrink-0">
+          <button 
+            onClick={() => setActiveTab('gemara')}
+            className={cn(
+                "flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors",
+                activeTab === 'gemara' ? "text-amber-600 bg-amber-50/50 dark:bg-amber-900/10 border-t-2 border-amber-600" : "text-zinc-400"
+            )}
+          >
+              גמרא
+          </button>
+          <button 
+            onClick={() => setActiveTab('translation')}
+            className={cn(
+                "flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors",
+                activeTab === 'translation' ? "text-amber-600 bg-amber-50/50 dark:bg-amber-900/10 border-t-2 border-amber-600" : "text-zinc-400"
+            )}
+          >
+              Translation
+          </button>
+          <button 
+            onClick={() => setActiveTab('commentary')}
+            className={cn(
+                "flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors",
+                activeTab === 'commentary' ? "text-amber-600 bg-amber-50/50 dark:bg-amber-900/10 border-t-2 border-amber-600" : "text-zinc-400"
+            )}
+          >
+              Commentaries
+          </button>
       </div>
 
       {/* Original Layout Modal */}
