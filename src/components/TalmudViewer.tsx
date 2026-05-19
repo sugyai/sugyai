@@ -377,7 +377,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
       <div className="flex flex-1 min-h-0 overflow-hidden flex-col lg:flex-row">
         {/* Left Pane: Main Text (Gemara) */}
         <div className={cn(
-            "w-full lg:w-1/3 flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right",
+            "flex-1 lg:w-1/3 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right min-h-0",
             activeTab === 'gemara' ? "flex" : "hidden lg:flex"
         )} dir="rtl">
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
@@ -400,7 +400,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                 }}
               >
                 <div 
-                  className="leading-relaxed text-2xl font-serif dark:text-zinc-100"
+                  className="leading-relaxed text-lg lg:text-2xl font-serif dark:text-zinc-100"
                   dangerouslySetInnerHTML={{ __html: heLine }}
                 />
                 {selectedIndex === index && (
@@ -418,7 +418,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
 
         {/* Middle Pane: Parallel Translation */}
         <div className={cn(
-            "w-full lg:w-1/3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col",
+            "flex-1 lg:w-1/3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col min-h-0",
             activeTab === 'translation' ? "flex" : "hidden lg:flex"
         )}>
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex-shrink-0 h-[53px] flex items-center justify-between">
@@ -451,7 +451,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                 Sefaria Translation
               </h4>
               <div 
-                className="leading-relaxed text-xl text-zinc-800 dark:text-zinc-200 font-medium"
+                className="leading-relaxed text-base lg:text-xl text-zinc-800 dark:text-zinc-200 font-medium"
                 dangerouslySetInnerHTML={{ __html: processedEnglish[selectedIndex] || 'No translation available for this segment.' }}
               />
             </section>
@@ -462,7 +462,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                   AI Deep Insight
                 </h4>
-                <div className="text-lg text-zinc-700 dark:text-zinc-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-5 rounded-xl border border-emerald-100 dark:border-emerald-900/50 leading-relaxed shadow-inner prose prose-zinc dark:prose-invert max-w-none">
+                <div className="text-sm lg:text-lg text-zinc-700 dark:text-zinc-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-5 rounded-xl border border-emerald-100 dark:border-emerald-900/50 leading-relaxed shadow-inner prose prose-sm lg:prose-zinc dark:prose-invert max-w-none">
                   <ReactMarkdown>{aiTranslations[activeSegmentId]}</ReactMarkdown>
                 </div>
               </section>
@@ -476,7 +476,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
 
         {/* Right Pane: Persistent Commentary List */}
         <div className={cn(
-            "w-full lg:w-1/3 bg-zinc-50/50 dark:bg-zinc-950 flex flex-col",
+            "flex-1 lg:w-1/3 bg-zinc-50/50 dark:bg-zinc-950 flex flex-col min-h-0",
             activeTab === 'commentary' ? "flex" : "hidden lg:flex"
         )}>
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-shrink-0 h-[53px] flex items-center justify-between">
