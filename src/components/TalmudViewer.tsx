@@ -393,6 +393,37 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         </div>
       )}
 
+      {/* Mobile Tab Navigation */}
+      <div className="lg:hidden flex border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-shrink-0">
+          <button 
+            onClick={() => setActiveTab('gemara')}
+            className={cn(
+                "flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors",
+                activeTab === 'gemara' ? "text-amber-600 bg-amber-50/50 dark:bg-amber-900/10 border-b-2 border-amber-600" : "text-zinc-400"
+            )}
+          >
+              גמרא
+          </button>
+          <button 
+            onClick={() => setActiveTab('translation')}
+            className={cn(
+                "flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors",
+                activeTab === 'translation' ? "text-amber-600 bg-amber-50/50 dark:bg-amber-900/10 border-b-2 border-amber-600" : "text-zinc-400"
+            )}
+          >
+              Translation
+          </button>
+          <button 
+            onClick={() => setActiveTab('commentary')}
+            className={cn(
+                "flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors",
+                activeTab === 'commentary' ? "text-amber-600 bg-amber-50/50 dark:bg-amber-900/10 border-b-2 border-amber-600" : "text-zinc-400"
+            )}
+          >
+              Commentaries
+          </button>
+      </div>
+
       {/* Main Study Interface */}
       <div className="flex flex-1 min-h-0 overflow-hidden flex-col lg:flex-row">
         {/* Left Pane: Main Text (Gemara) */}
@@ -646,37 +677,6 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Mobile Tab Navigation */}
-      <div className="lg:hidden flex border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-shrink-0">
-          <button 
-            onClick={() => setActiveTab('gemara')}
-            className={cn(
-                "flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors",
-                activeTab === 'gemara' ? "text-amber-600 bg-amber-50/50 dark:bg-amber-900/10 border-t-2 border-amber-600" : "text-zinc-400"
-            )}
-          >
-              גמרא
-          </button>
-          <button 
-            onClick={() => setActiveTab('translation')}
-            className={cn(
-                "flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors",
-                activeTab === 'translation' ? "text-amber-600 bg-amber-50/50 dark:bg-amber-900/10 border-t-2 border-amber-600" : "text-zinc-400"
-            )}
-          >
-              Translation
-          </button>
-          <button 
-            onClick={() => setActiveTab('commentary')}
-            className={cn(
-                "flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-colors",
-                activeTab === 'commentary' ? "text-amber-600 bg-amber-50/50 dark:bg-amber-900/10 border-t-2 border-amber-600" : "text-zinc-400"
-            )}
-          >
-              Commentaries
-          </button>
       </div>
 
       {/* Original Layout Modal */}
