@@ -46,6 +46,9 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   
+  // UI Customization states
+  const [textZoom, setTextZoom] = useState<'sm' | 'md' | 'lg'>('md');
+  
   // AI Feature states
   const [aiTranslations, setAiTranslations] = useState<Record<string, string>>({});
   const [translatingRefs, setTranslatingRefs] = useState<Record<string, boolean>>({});
@@ -63,6 +66,14 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
   const handleInteraction = useCallback(() => {
     onInteract?.();
   }, [onInteract]);
+
+  const cycleTextZoom = () => {
+      setTextZoom(prev => {
+          if (prev === 'sm') return 'md';
+          if (prev === 'md') return 'lg';
+          return 'sm';
+      });
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -218,19 +229,19 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
   return (
     <div className="flex flex-col h-full w-full bg-white dark:bg-black overflow-hidden relative">
       {/* Sleek Header / Navigation */}
-      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-3 flex items-center justify-between z-40 shadow-sm flex-shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-2 lg:px-6 py-1.5 lg:py-3 flex items-center justify-between z-40 shadow-sm flex-shrink-0">
+        <div className="flex items-center gap-2 lg:gap-4">
             <button 
                 onClick={() => {
                     handleInteraction();
                     setShowPicker(!showPicker);
                 }}
-                className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-all border border-transparent hover:border-amber-400/50 group"
+                className="flex items-center gap-1.5 lg:gap-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 px-2 py-1 lg:px-3 lg:py-1.5 rounded-lg transition-all border border-transparent hover:border-amber-400/50 group"
             >
-                <span className="text-amber-600 dark:text-amber-400 font-bold font-serif text-lg">
+                <span className="text-amber-600 dark:text-amber-400 font-bold font-serif text-sm lg:text-lg">
                     {data?.ref || currentRef}
                 </span>
-                <span className={cn("text-zinc-400 transition-transform", showPicker ? "rotate-180" : "")}>▼</span>
+                <span className={cn("text-zinc-400 transition-transform text-[10px] lg:text-base", showPicker ? "rotate-180" : "")}>▼</span>
             </button>
             
             <div className="hidden lg:flex items-center gap-2 text-zinc-400 text-xs font-black uppercase tracking-[0.2em]">
@@ -254,20 +265,29 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
             </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 lg:gap-3">
             {hbPdfUrl && (
                 <button 
                     onClick={() => {
                         handleInteraction();
                         setShowPdfModal(true);
                     }}
-                    className="hidden md:flex items-center gap-2 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-md text-xs font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 transition-all border border-zinc-200 dark:border-zinc-700 hover:border-amber-500/50"
+                    className="flex items-center gap-1.5 px-2 py-1 lg:px-3 lg:py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-md text-[10px] lg:text-xs font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 transition-all border border-zinc-200 dark:border-zinc-700 hover:border-amber-500/50"
                 >
-                    <span className="text-amber-600">📄</span> View Vilna Layout
+                    <span className="text-amber-600">📄</span> <span className="hidden sm:inline">View Vilna Layout</span>
                 </button>
             )}
             
-            <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800 mx-2" />
+            <button 
+                onClick={cycleTextZoom}
+                className="p-1 lg:p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-amber-600 transition-colors flex items-center gap-0.5"
+                title="Cycle Font Size"
+            >
+                <span className="text-[10px] lg:text-xs font-bold">A</span>
+                <span className="text-sm lg:text-lg font-bold">A</span>
+            </button>
+
+            <div className="h-4 lg:h-6 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 lg:mx-2" />
 
             <button 
                 onClick={() => {
@@ -280,7 +300,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                         else if (daf > 2) setCurrentRef(`${match[1]} ${daf-1}b`);
                     }
                 }}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-amber-600 transition-colors"
+                className="p-1 lg:p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-amber-600 transition-colors"
                 title="Previous Daf"
             >
                 ◀
@@ -296,7 +316,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                         else setCurrentRef(`${match[1]} ${daf+1}a`);
                     }
                 }}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-amber-600 transition-colors"
+                className="p-1 lg:p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-amber-600 transition-colors"
                 title="Next Daf"
             >
                 ▶
@@ -380,14 +400,14 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
             "flex-1 lg:w-1/3 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right min-h-0",
             activeTab === 'gemara' ? "flex" : "hidden lg:flex"
         )} dir="rtl">
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
+          <div className="flex-1 overflow-y-auto px-2 lg:px-4 py-4 space-y-2 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
             {data?.he.map((heLine, index) => (
               <div 
                 key={index}
                 className={cn(
-                  "p-4 rounded-xl transition-all border-2 cursor-pointer relative group",
+                  "p-3 lg:p-4 rounded-xl transition-all border-2 cursor-pointer relative group",
                   selectedIndex === index 
-                    ? "bg-amber-100/40 border-amber-400 dark:bg-amber-900/30 dark:border-amber-600 shadow-md scale-[1.02] z-10" 
+                    ? "bg-amber-100/40 border-amber-400 dark:bg-amber-900/30 dark:border-amber-600 shadow-md scale-[1.01] z-10" 
                     : "border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-900"
                 )}
                 onClick={() => {
@@ -400,11 +420,16 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                 }}
               >
                 <div 
-                  className="leading-relaxed text-lg lg:text-2xl font-serif dark:text-zinc-100"
+                  className={cn(
+                      "leading-relaxed font-serif dark:text-zinc-100",
+                      textZoom === 'sm' ? "text-sm lg:text-lg" : 
+                      textZoom === 'md' ? "text-lg lg:text-2xl" : 
+                      "text-xl lg:text-3xl"
+                  )}
                   dangerouslySetInnerHTML={{ __html: heLine }}
                 />
                 {selectedIndex === index && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-amber-500 rounded-full" />
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-amber-500 rounded-full" />
                 )}
               </div>
             ))}
@@ -444,14 +469,19 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                 </button>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
+          <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 lg:space-y-8 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
             <section className="animate-in fade-in slide-in-from-top-2 duration-500">
               <h4 className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase mb-4 tracking-widest flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
                 Sefaria Translation
               </h4>
               <div 
-                className="leading-relaxed text-base lg:text-xl text-zinc-800 dark:text-zinc-200 font-medium"
+                className={cn(
+                    "leading-relaxed font-medium text-zinc-800 dark:text-zinc-200",
+                    textZoom === 'sm' ? "text-xs lg:text-base" : 
+                    textZoom === 'md' ? "text-base lg:text-xl" : 
+                    "text-lg lg:text-2xl"
+                )}
                 dangerouslySetInnerHTML={{ __html: processedEnglish[selectedIndex] || 'No translation available for this segment.' }}
               />
             </section>
@@ -462,7 +492,12 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                   AI Deep Insight
                 </h4>
-                <div className="text-sm lg:text-lg text-zinc-700 dark:text-zinc-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-5 rounded-xl border border-emerald-100 dark:border-emerald-900/50 leading-relaxed shadow-inner prose prose-sm lg:prose-zinc dark:prose-invert max-w-none">
+                <div className={cn(
+                    "text-zinc-700 dark:text-zinc-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 lg:p-5 rounded-xl border border-emerald-100 dark:border-emerald-900/50 leading-relaxed shadow-inner max-w-none",
+                    textZoom === 'sm' ? "prose prose-xs lg:prose-zinc dark:prose-invert text-xs" : 
+                    textZoom === 'md' ? "prose prose-sm lg:prose-zinc dark:prose-invert text-sm lg:text-lg" : 
+                    "prose prose-base lg:prose-zinc dark:prose-invert text-base lg:text-xl"
+                )}>
                   <ReactMarkdown>{aiTranslations[activeSegmentId]}</ReactMarkdown>
                 </div>
               </section>
@@ -484,7 +519,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
           </div>
           
           <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
-            <div className="p-4 space-y-4">
+            <div className="p-3 lg:p-4 space-y-3 lg:space-y-4">
               {segmentCommentaries.length > 0 ? (
                 segmentCommentaries.map((comm, i) => {
                   const isExpanded = expandedCommentary === comm.ref;
@@ -514,26 +549,26 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                             setExpandedCommentary(isExpanded ? null : comm.ref);
                         }}
                         className={cn(
-                          "w-full p-4 flex flex-col items-start gap-2 text-left transition-colors z-20",
+                          "w-full p-3 lg:p-4 flex flex-col items-start gap-2 text-left transition-colors z-20",
                           isExpanded ? "sticky top-0 bg-white dark:bg-zinc-900 border-b border-amber-100 dark:border-amber-800/50 rounded-none" : "rounded-xl"
                         )}
                       >
                         <div className="flex w-full justify-between items-center">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 lg:gap-3">
                                 <div className={cn(
-                                    "w-1 h-5 rounded-full transition-colors",
+                                    "w-0.5 lg:w-1 h-4 lg:h-5 rounded-full transition-colors",
                                     isExpanded ? "bg-amber-500" : "bg-zinc-200 dark:bg-zinc-700"
                                 )} />
                                 <div className="flex flex-col">
-                                    <span className="text-[13px] font-black text-amber-800 dark:text-amber-500 uppercase tracking-widest leading-none">{title}</span>
+                                    <span className="text-[11px] lg:text-[13px] font-black text-amber-800 dark:text-amber-500 uppercase tracking-widest leading-none">{title}</span>
                                     {comm.compDate && (
-                                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">c. {comm.compDate[0]} CE</span>
+                                        <span className="text-[9px] lg:text-[10px] text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">c. {comm.compDate[0]} CE</span>
                                     )}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 lg:gap-3">
                                 <span className={cn(
-                                    "text-zinc-400 transition-transform duration-300 text-xs",
+                                    "text-zinc-400 transition-transform duration-300 text-[10px] lg:text-xs",
                                     isExpanded ? "rotate-180" : ""
                                 )}>▼</span>
                                 
@@ -545,16 +580,16 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                                       }}
                                       disabled={translatingRefs[comm.ref]}
                                       className={cn(
-                                        "flex items-center gap-1.5 px-2 py-1 rounded-md transition-all border disabled:opacity-80",
+                                        "flex items-center gap-1 px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md transition-all border disabled:opacity-80",
                                         translatingRefs[comm.ref]
                                           ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50 animate-pulse"
                                           : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/50 hover:bg-amber-200 dark:hover:bg-amber-900/60"
                                       )}
                                     >
-                                      <span className="text-xs leading-none">
+                                      <span className="text-[10px] lg:text-xs leading-none">
                                         {translatingRefs[comm.ref] ? '⏳' : '✨'}
                                       </span>
-                                      <span className="text-[10px] font-black uppercase tracking-tighter">
+                                      <span className="text-[8px] lg:text-[10px] font-black uppercase tracking-tighter">
                                           {translatingRefs[comm.ref] ? 'Translating...' : 'AI Translate'}
                                       </span>
                                     </button>
@@ -564,7 +599,8 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                         
                         {dh && (
                             <div className={cn(
-                                "font-serif text-lg font-bold text-zinc-800 dark:text-zinc-100 transition-opacity mt-1",
+                                "font-serif font-bold text-zinc-800 dark:text-zinc-100 transition-opacity mt-1",
+                                textZoom === 'sm' ? "text-base" : textZoom === 'md' ? "text-lg" : "text-xl",
                                 isExpanded ? "opacity-100" : "opacity-70"
                             )} dir="rtl">
                                 {dh}
@@ -573,15 +609,26 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                       </button>
                       
                       {isExpanded && (
-                        <div className="px-6 pb-6 pt-4 space-y-5 animate-in slide-in-from-top-4 duration-300">
-                          <div dir="rtl" className="text-xl font-serif leading-loose dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-800 pb-4" dangerouslySetInnerHTML={{ __html: comm.he }} />
+                        <div className="px-4 lg:px-6 pb-4 lg:pb-6 pt-3 lg:pt-4 space-y-4 lg:space-y-5 animate-in slide-in-from-top-4 duration-300">
+                          <div dir="rtl" className={cn(
+                              "font-serif leading-loose dark:text-zinc-100 border-b border-zinc-100 dark:border-zinc-800 pb-4",
+                              textZoom === 'sm' ? "text-lg" : textZoom === 'md' ? "text-xl" : "text-2xl"
+                          )} dangerouslySetInnerHTML={{ __html: comm.he }} />
                           
                           {comm.text && (
-                            <div className="text-lg text-zinc-700 dark:text-zinc-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: deTransliterate(comm.text) }} />
+                            <div className={cn(
+                                "text-zinc-700 dark:text-zinc-300 leading-relaxed",
+                                textZoom === 'sm' ? "text-base" : textZoom === 'md' ? "text-lg" : "text-xl"
+                            )} dangerouslySetInnerHTML={{ __html: deTransliterate(comm.text) }} />
                           )}
 
                           {aiTranslations[comm.ref] && (
-                            <div className="text-lg text-amber-950 dark:text-amber-200 bg-amber-50/50 dark:bg-amber-950/30 p-5 rounded-xl border border-amber-200/50 dark:border-amber-800/50 italic leading-relaxed shadow-inner prose prose-amber dark:prose-invert max-w-none">
+                            <div className={cn(
+                                "text-amber-950 dark:text-amber-200 bg-amber-50/50 dark:bg-amber-950/30 p-4 lg:p-5 rounded-xl border border-amber-200/50 dark:border-amber-800/50 italic leading-relaxed shadow-inner max-w-none",
+                                textZoom === 'sm' ? "prose prose-xs dark:prose-invert text-sm" : 
+                                textZoom === 'md' ? "prose prose-sm lg:prose-zinc dark:prose-invert text-base lg:text-lg" : 
+                                "prose prose-base lg:prose-zinc dark:prose-invert text-lg lg:text-xl"
+                            )}>
                               <ReactMarkdown>{aiTranslations[comm.ref]}</ReactMarkdown>
                             </div>
                           )}
