@@ -518,7 +518,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         {/* Left Pane: Main Text (Gemara) */}
         <div 
           className={cn(
-            "flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right min-h-0 transition-all duration-700 ease-in-out",
+            "flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right min-h-0 transition-all duration-400 ease-in-out",
             activeTab === 'gemara' ? "flex" : "hidden lg:flex",
             focusedPanel === 'none' ? "lg:flex-[1_1_33%]" : focusedPanel === 'gemara' ? "lg:flex-[1_1_60%] z-10 shadow-2xl" : "lg:flex-[1_1_20%] opacity-40 grayscale blur-[0.5px] cursor-pointer hover:opacity-100 hover:grayscale-0 hover:blur-0"
           )} 
@@ -586,7 +586,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         {/* Middle Pane: Parallel Translation */}
         <div 
           className={cn(
-            "border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col min-h-0 transition-all duration-700 ease-in-out",
+            "border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col min-h-0 transition-all duration-400 ease-in-out",
             activeTab === 'translation' ? "flex" : "hidden lg:flex",
             focusedPanel === 'none' ? "lg:flex-[1_1_33%]" : focusedPanel === 'translation' ? "lg:flex-[1_1_60%] z-10 shadow-2xl" : "lg:flex-[1_1_20%] opacity-40 grayscale blur-[0.5px] cursor-pointer hover:opacity-100 hover:grayscale-0 hover:blur-0"
           )}
@@ -674,7 +674,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         {/* Right Pane: Persistent Commentary List */}
         <div 
           className={cn(
-            "bg-zinc-50/50 dark:bg-zinc-950 flex flex-col min-h-0 transition-all duration-700 ease-in-out",
+            "bg-zinc-50/50 dark:bg-zinc-950 flex flex-col min-h-0 transition-all duration-400 ease-in-out",
             activeTab === 'commentary' ? "flex" : "hidden lg:flex",
             focusedPanel === 'none' ? "lg:flex-[1_1_33%]" : focusedPanel === 'commentary' ? "lg:flex-[1_1_60%] z-10 shadow-2xl" : "lg:flex-[1_1_20%] opacity-40 grayscale blur-[0.5px] cursor-pointer hover:opacity-100 hover:grayscale-0 hover:blur-0"
           )}
