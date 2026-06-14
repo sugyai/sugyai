@@ -118,12 +118,24 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'translate', text: comm.he, context: comm.index_title })
       });
+      
       const resData = await response.json();
+      
+      if (resData.error) {
+        console.error('AI Translation API error:', resData.error);
+        alert(`Translation failed: ${resData.error}`);
+        return;
+      }
+
       if (resData.result) {
         setAiTranslations(prev => ({ ...prev, [comm.ref]: resData.result }));
+      } else {
+        console.warn('AI Translation returned no result:', resData);
+        alert('Translation failed: No result received from AI.');
       }
     } catch (err) {
-      console.error('AI Translation failed:', err);
+      console.error('AI Translation network failed:', err);
+      alert('Translation failed: Network error. Please check your connection.');
     } finally {
       setTranslatingRefs(prev => ({ ...prev, [comm.ref]: false }));
     }

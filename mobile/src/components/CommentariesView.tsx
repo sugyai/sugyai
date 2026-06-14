@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, StyleSheet, View, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, Text, TouchableOpacity, StyleSheet, View, ActivityIndicator, Alert } from 'react-native';
 import { useStore } from '../store/useStore';
 import { extractDivreiHamaschil } from '../lib/sefaria';
 import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react-native';
 
 export const CommentariesView = () => {
-  const { data, activeSegmentIndex, isLoading, currentRef, handleAiTranslate, aiTranslations, translatingRefs } = useStore();
+  const { data, activeSegmentIndex, isLoading, currentRef, handleAiTranslate, aiTranslations, translatingRefs, error, clearError } = useStore();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error, [{ text: 'OK', onPress: clearError }]);
+    }
+  }, [error, clearError]);
 
   if (isLoading) {
     return (
