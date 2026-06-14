@@ -40,7 +40,27 @@ interface TalmudViewerProps {
 }
 
 export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }: TalmudViewerProps) {
-  const [currentRef, setCurrentRef] = useState(initialRef);
+  // Initialize currentRef from URL if available, otherwise use initialRef
+  const [currentRef, setCurrentRef] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref');
+      return ref || initialRef;
+    }
+    return initialRef;
+  });
+
+  // Update URL whenever currentRef changes
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (currentRef !== initialRef) {
+      url.searchParams.set('ref', currentRef);
+    } else {
+      url.searchParams.delete('ref');
+    }
+    window.history.replaceState({}, '', url.toString());
+  }, [currentRef, initialRef]);
+
   const [data, setData] = useState<SefariaTextResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
