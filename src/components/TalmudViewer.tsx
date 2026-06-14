@@ -92,18 +92,46 @@ interface TalmudViewerProps {
 }
 
 export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }: TalmudViewerProps) {
-  // Initialize currentRef from URL if available, otherwise use initialRef
-  const [currentRef, setCurrentRef] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const ref = params.get('ref');
-      return ref || initialRef;
-    }
-    return initialRef;
-  });
+  const [currentRef, setCurrentRef] = useState(initialRef);
+  const [isMounted, setIsMounted] = useState(false);
+  const [aiTranslations, setAiTranslations] = useState<Record<string, string>>({});
 
-  // Update URL whenever currentRef changes
+  // Initial load from URL and localStorage
   useEffect(() => {
+    setIsMounted(true);
+    
+    // 1. Check URL for ref
+    const params = new URLSearchParams(window.location.search);
+    const urlRef = params.get('ref');
+    
+    // 2. Check localStorage for ref
+    const savedRef = localStorage.getItem('sugyai_current_ref');
+    
+    if (urlRef) {
+      setCurrentRef(urlRef);
+    } else if (savedRef) {
+      setCurrentRef(savedRef);
+    }
+
+    // 3. Load AI translations
+    const savedTranslations = localStorage.getItem('sugyai_ai_translations');
+    if (savedTranslations) {
+      try {
+        setAiTranslations(JSON.parse(savedTranslations));
+      } catch (e) {
+        console.error('Failed to parse saved translations', e);
+      }
+    }
+  }, []);
+
+  // Sync currentRef to URL and localStorage
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    // Save to localStorage
+    localStorage.setItem('sugyai_current_ref', currentRef);
+    
+    // Update URL
     const url = new URL(window.location.href);
     if (currentRef !== initialRef) {
       url.searchParams.set('ref', currentRef);
@@ -111,7 +139,13 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
       url.searchParams.delete('ref');
     }
     window.history.replaceState({}, '', url.toString());
-  }, [currentRef, initialRef]);
+  }, [currentRef, initialRef, isMounted]);
+
+  // Save AI translations whenever they change
+  useEffect(() => {
+    if (!isMounted || Object.keys(aiTranslations).length === 0) return;
+    localStorage.setItem('sugyai_ai_translations', JSON.stringify(aiTranslations));
+  }, [aiTranslations, isMounted]);
 
   const [data, setData] = useState<SefariaTextResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -122,7 +156,6 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
   const [textZoom, setTextZoom] = useState<'sm' | 'md' | 'lg'>('md');
   
   // AI Feature states
-  const [aiTranslations, setAiTranslations] = useState<Record<string, string>>({});
   const [translatingRefs, setTranslatingRefs] = useState<Record<string, boolean>>({});
   const [explainingSegments, setExplainingSegments] = useState<Record<string, boolean>>({});
   const [expandedCommentary, setExpandedCommentary] = useState<string | null>(null);
