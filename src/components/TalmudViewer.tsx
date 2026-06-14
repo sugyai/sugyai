@@ -10,28 +10,80 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Popular tractates for the picker
-const POPULAR_TRACTATES = [
-  { id: 'Berakhot', en: 'Berakhot', he: 'ברכות' },
-  { id: 'Shabbat', en: 'Shabbat', he: 'שבת' },
-  { id: 'Eruvin', en: 'Eruvin', he: 'עירובין' },
-  { id: 'Pesachim', en: 'Pesachim', he: 'פסחים' },
-  { id: 'Yoma', en: 'Yoma', he: 'יומא' },
-  { id: 'Sukkah', en: 'Sukkah', he: 'סוכה' },
-  { id: 'Beitzah', en: 'Beitzah', he: 'ביצה' },
-  { id: 'Rosh_Hashanah', en: 'Rosh Hashanah', he: 'ראש השנה' },
-  { id: 'Taanit', en: 'Taanit', he: 'תענית' },
-  { id: 'Megillah', en: 'Megillah', he: 'מגילה' },
-  { id: 'Ketubot', en: 'Ketubot', he: 'כתובות' },
-  { id: 'Gittin', en: 'Gittin', he: 'גיטין' },
-  { id: 'Kiddushin', en: 'Kiddushin', he: 'קידושין' },
-  { id: 'Bava_Kamma', en: 'Bava Kamma', he: 'בבא קמא' },
-  { id: 'Bava_Metzia', en: 'Bava Metzia', he: 'בבא מציעא' },
-  { id: 'Bava_Batra', en: 'Bava Batra', he: 'בבא בתרא' },
-  { id: 'Sanhedrin', en: 'Sanhedrin', he: 'סנהדרין' },
-  { id: 'Avodah_Zarah', en: 'Avodah Zarah', he: 'עבודה זרה' },
-  { id: 'Chullin', en: 'Chullin', he: 'חולין' },
-  { id: 'Niddah', en: 'Niddah', he: 'נידה' },
+// Comprehensive tractates for the picker
+const ALL_TRACTATES = [
+  { 
+    seder: 'Zeraim (Seeds)',
+    items: [
+      { id: 'Berakhot', en: 'Berakhot', he: 'ברכות' }
+    ]
+  },
+  {
+    seder: 'Moed (Festivals)',
+    items: [
+      { id: 'Shabbat', en: 'Shabbat', he: 'שבת' },
+      { id: 'Eruvin', en: 'Eruvin', he: 'עירובין' },
+      { id: 'Pesachim', en: 'Pesachim', he: 'פסחים' },
+      { id: 'Shekalim', en: 'Shekalim', he: 'שקלים' },
+      { id: 'Yoma', en: 'Yoma', he: 'יומא' },
+      { id: 'Sukkah', en: 'Sukkah', he: 'סוכה' },
+      { id: 'Beitzah', en: 'Beitzah', he: 'ביצה' },
+      { id: 'Rosh_Hashanah', en: 'Rosh Hashanah', he: 'ראש השנה' },
+      { id: 'Taanit', en: 'Taanit', he: 'תענית' },
+      { id: 'Megillah', en: 'Megillah', he: 'מגילה' },
+      { id: 'Moed_Katan', en: 'Moed Katan', he: 'מועד קטן' },
+      { id: 'Chagigah', en: 'Chagigah', he: 'חגיגה' }
+    ]
+  },
+  {
+    seder: 'Nashim (Women)',
+    items: [
+      { id: 'Yevamot', en: 'Yevamot', he: 'יבמות' },
+      { id: 'Ketubot', en: 'Ketubot', he: 'כתובות' },
+      { id: 'Nedarim', en: 'Nedarim', he: 'נדרים' },
+      { id: 'Nazir', en: 'Nazir', he: 'נזיר' },
+      { id: 'Sotah', en: 'Sotah', he: 'סוטה' },
+      { id: 'Gittin', en: 'Gittin', he: 'גיטין' },
+      { id: 'Kiddushin', en: 'Kiddushin', he: 'קידושין' }
+    ]
+  },
+  {
+    seder: 'Nezikin (Damages)',
+    items: [
+      { id: 'Bava_Kamma', en: 'Bava Kamma', he: 'בבא קמא' },
+      { id: 'Bava_Metzia', en: 'Bava Metzia', he: 'בבא מציעא' },
+      { id: 'Bava_Batra', en: 'Bava Batra', he: 'בבא בתרא' },
+      { id: 'Sanhedrin', en: 'Sanhedrin', he: 'סנהדרין' },
+      { id: 'Makkot', en: 'Makkot', he: 'מכות' },
+      { id: 'Shevuot', en: 'Shevuot', he: 'שבועות' },
+      { id: 'Eduyot', en: 'Eduyot', he: 'עדיות' },
+      { id: 'Avodah_Zarah', en: 'Avodah Zarah', he: 'עבודה זרה' },
+      { id: 'Avot', en: 'Avot', he: 'אבות' },
+      { id: 'Horayot', en: 'Horayot', he: 'הוריות' }
+    ]
+  },
+  {
+    seder: 'Kodashim (Holy Things)',
+    items: [
+      { id: 'Zevachim', en: 'Zevachim', he: 'זבחים' },
+      { id: 'Menachot', en: 'Menachot', he: 'מנחות' },
+      { id: 'Chullin', en: 'Chullin', he: 'חולין' },
+      { id: 'Bekhorot', en: 'Bekhorot', he: 'בכורות' },
+      { id: 'Arakhin', en: 'Arakhin', he: 'ערכין' },
+      { id: 'Temurah', en: 'Temurah', he: 'תמורה' },
+      { id: 'Keritot', en: 'Keritot', he: 'כריתות' },
+      { id: 'Meilah', en: 'Meilah', he: 'מעילה' },
+      { id: 'Tamid', en: 'Tamid', he: 'תמיד' },
+      { id: 'Middot', en: 'Middot', he: 'מידות' },
+      { id: 'Kinnim', en: 'Kinnim', he: 'קינים' }
+    ]
+  },
+  {
+    seder: 'Tohorot (Purities)',
+    items: [
+      { id: 'Niddah', en: 'Niddah', he: 'נידה' }
+    ]
+  }
 ];
 
 interface TalmudViewerProps {
@@ -75,6 +127,7 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
   const [explainingSegments, setExplainingSegments] = useState<Record<string, boolean>>({});
   const [expandedCommentary, setExpandedCommentary] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'gemara' | 'translation' | 'commentary'>('gemara');
+  const [focusedPanel, setFocusedPanel] = useState<'none' | 'gemara' | 'translation' | 'commentary'>('none');
 
   // Picker states
   const [showPicker, setShowPicker] = useState(false);
@@ -369,8 +422,12 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                             onChange={(e) => setPickerTractate(e.target.value)}
                             className="w-full bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl border-none text-sm font-bold focus:ring-2 focus:ring-amber-500 outline-none"
                         >
-                            {POPULAR_TRACTATES.map(t => (
-                                <option key={t.id} value={t.id.replace(/_/g, ' ')}>{t.en} ({t.he})</option>
+                            {ALL_TRACTATES.map(seder => (
+                                <optgroup key={seder.seder} label={seder.seder}>
+                                    {seder.items.map(t => (
+                                        <option key={t.id} value={t.id.replace(/_/g, ' ')}>{t.en} ({t.he})</option>
+                                    ))}
+                                </optgroup>
                             ))}
                         </select>
                     </section>
@@ -459,10 +516,32 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
       {/* Main Study Interface */}
       <div className="flex flex-1 min-h-0 overflow-hidden flex-col lg:flex-row">
         {/* Left Pane: Main Text (Gemara) */}
-        <div className={cn(
-            "flex-1 lg:w-1/3 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right min-h-0",
-            activeTab === 'gemara' ? "flex" : "hidden lg:flex"
-        )} dir="rtl">
+        <div 
+          className={cn(
+            "flex-col border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 relative text-right min-h-0 transition-all duration-700 ease-in-out",
+            activeTab === 'gemara' ? "flex" : "hidden lg:flex",
+            focusedPanel === 'none' ? "lg:flex-[1_1_33%]" : focusedPanel === 'gemara' ? "lg:flex-[1_1_60%] z-10 shadow-2xl" : "lg:flex-[1_1_20%] opacity-40 grayscale blur-[0.5px] cursor-pointer hover:opacity-100 hover:grayscale-0 hover:blur-0"
+          )} 
+          dir="rtl"
+          onClick={() => {
+            if (focusedPanel !== 'none' && focusedPanel !== 'gemara') {
+              setFocusedPanel('gemara');
+            }
+          }}
+        >
+          <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 flex-shrink-0 h-[53px] flex items-center justify-between">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Gemara</h3>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setFocusedPanel(focusedPanel === 'gemara' ? 'none' : 'gemara');
+              }}
+              className="p-1 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded transition-colors hidden lg:block"
+              title={focusedPanel === 'gemara' ? "Restore Layout" : "Focus Gemara"}
+            >
+              {focusedPanel === 'gemara' ? '⇙⇗' : '⇖⇘'}
+            </button>
+          </div>
           <div className="flex-1 overflow-y-auto px-2 lg:px-4 py-4 space-y-2 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
             {data?.he.map((heLine, index) => (
               <div 
@@ -505,32 +584,52 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         </div>
 
         {/* Middle Pane: Parallel Translation */}
-        <div className={cn(
-            "flex-1 lg:w-1/3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col min-h-0",
-            activeTab === 'translation' ? "flex" : "hidden lg:flex"
-        )}>
+        <div 
+          className={cn(
+            "border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col min-h-0 transition-all duration-700 ease-in-out",
+            activeTab === 'translation' ? "flex" : "hidden lg:flex",
+            focusedPanel === 'none' ? "lg:flex-[1_1_33%]" : focusedPanel === 'translation' ? "lg:flex-[1_1_60%] z-10 shadow-2xl" : "lg:flex-[1_1_20%] opacity-40 grayscale blur-[0.5px] cursor-pointer hover:opacity-100 hover:grayscale-0 hover:blur-0"
+          )}
+          onClick={() => {
+            if (focusedPanel !== 'none' && focusedPanel !== 'translation') {
+              setFocusedPanel('translation');
+            }
+          }}
+        >
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex-shrink-0 h-[53px] flex items-center justify-between">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Translation: Segment {selectedIndex + 1}</h3>
             
-            {!aiTranslations[activeSegmentId] && (
-                <button 
-                    onClick={handleAiExplain}
-                    disabled={explainingSegments[activeSegmentId]}
-                    className={cn(
-                        "flex items-center gap-1.5 px-2 py-1 rounded-md transition-all border disabled:opacity-80",
-                        explainingSegments[activeSegmentId]
-                          ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50 animate-pulse"
-                          : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-amber-800/50 hover:bg-emerald-200 dark:hover:bg-emerald-900/60"
-                    )}
-                >
-                    <span className="text-xs leading-none">
-                        {explainingSegments[activeSegmentId] ? '⏳' : '✨'}
-                    </span>
-                    <span className="text-[10px] font-black uppercase tracking-tighter">
-                        {explainingSegments[activeSegmentId] ? 'Explaining...' : 'AI Explain'}
-                    </span>
-                </button>
-            )}
+            <div className="flex items-center gap-2">
+              {!aiTranslations[activeSegmentId] && (
+                  <button 
+                      onClick={handleAiExplain}
+                      disabled={explainingSegments[activeSegmentId]}
+                      className={cn(
+                          "flex items-center gap-1.5 px-2 py-1 rounded-md transition-all border disabled:opacity-80",
+                          explainingSegments[activeSegmentId]
+                            ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-blue-200/50 dark:border-blue-800/50 animate-pulse"
+                            : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-amber-800/50 hover:bg-emerald-200 dark:hover:bg-emerald-900/60"
+                      )}
+                  >
+                      <span className="text-xs leading-none">
+                          {explainingSegments[activeSegmentId] ? '⏳' : '✨'}
+                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-tighter">
+                          {explainingSegments[activeSegmentId] ? 'Explaining...' : 'AI Explain'}
+                      </span>
+                  </button>
+              )}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFocusedPanel(focusedPanel === 'translation' ? 'none' : 'translation');
+                }}
+                className="p-1 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded transition-colors hidden lg:block"
+                title={focusedPanel === 'translation' ? "Restore Layout" : "Focus Translation"}
+              >
+                {focusedPanel === 'translation' ? '⇙⇗' : '⇖⇘'}
+              </button>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 lg:space-y-8 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
             <section className="animate-in fade-in slide-in-from-top-2 duration-500">
@@ -573,12 +672,30 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         </div>
 
         {/* Right Pane: Persistent Commentary List */}
-        <div className={cn(
-            "flex-1 lg:w-1/3 bg-zinc-50/50 dark:bg-zinc-950 flex flex-col min-h-0",
-            activeTab === 'commentary' ? "flex" : "hidden lg:flex"
-        )}>
+        <div 
+          className={cn(
+            "bg-zinc-50/50 dark:bg-zinc-950 flex flex-col min-h-0 transition-all duration-700 ease-in-out",
+            activeTab === 'commentary' ? "flex" : "hidden lg:flex",
+            focusedPanel === 'none' ? "lg:flex-[1_1_33%]" : focusedPanel === 'commentary' ? "lg:flex-[1_1_60%] z-10 shadow-2xl" : "lg:flex-[1_1_20%] opacity-40 grayscale blur-[0.5px] cursor-pointer hover:opacity-100 hover:grayscale-0 hover:blur-0"
+          )}
+          onClick={() => {
+            if (focusedPanel !== 'none' && focusedPanel !== 'commentary') {
+              setFocusedPanel('commentary');
+            }
+          }}
+        >
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex-shrink-0 h-[53px] flex items-center justify-between">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Commentaries ({segmentCommentaries.length})</h3>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setFocusedPanel(focusedPanel === 'commentary' ? 'none' : 'commentary');
+              }}
+              className="p-1 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded transition-colors hidden lg:block"
+              title={focusedPanel === 'commentary' ? "Restore Layout" : "Focus Commentary"}
+            >
+              {focusedPanel === 'commentary' ? '⇙⇗' : '⇖⇘'}
+            </button>
           </div>
           
           <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
