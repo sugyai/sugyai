@@ -50,8 +50,8 @@ export const useStore = create<AppState>((set, get) => ({
     }));
 
     try {
-      // Use the production URL for the live site, fallback to localhost for development
-      const API_BASE = 'https://sugy-ai-65095948.a.run.app'; // Your Cloud Run URL
+      // Use the Firebase Hosting URL which proxies to Cloud Run
+      const API_BASE = 'https://gen-lang-client-0065095948.web.app';
       const response = await fetch(`${API_BASE}/api/ai-action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
