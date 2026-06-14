@@ -5,7 +5,7 @@ import { extractDivreiHamaschil } from '../lib/sefaria';
 import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react-native';
 
 export const CommentariesView = () => {
-  const { data, activeSegmentIndex, isLoading, currentRef } = useStore();
+  const { data, activeSegmentIndex, isLoading, currentRef, handleAiTranslate, aiTranslations, translatingRefs } = useStore();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   if (isLoading) {
@@ -38,6 +38,8 @@ export const CommentariesView = () => {
         const isExpanded = expandedIndex === index;
         const dh = extractDivreiHamaschil(commentary.he);
         const body = commentary.he.replace(/<[^>]*>/g, '').replace(dh, '').trim();
+        const translation = aiTranslations[commentary.ref] || commentary.text;
+        const isTranslating = translatingRefs[commentary.ref];
 
         return (
           <View key={index} style={styles.card}>
@@ -59,10 +61,27 @@ export const CommentariesView = () => {
             {isExpanded && (
               <View style={styles.cardBody}>
                 <Text style={styles.bodyText}>{body}</Text>
-                <TouchableOpacity style={styles.aiButton}>
-                  <Sparkles size={16} color="#FFF" />
-                  <Text style={styles.aiButtonText}>AI Translate</Text>
-                </TouchableOpacity>
+                
+                {translation ? (
+                  <View style={styles.translationContainer}>
+                    <Text style={styles.translationText}>{translation}</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity 
+                    style={[styles.aiButton, isTranslating && styles.disabledButton]}
+                    onPress={() => handleAiTranslate(commentary.ref, commentary.he, commentary.index_title)}
+                    disabled={isTranslating}
+                  >
+                    {isTranslating ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <Sparkles size={16} color="#FFF" />
+                    )}
+                    <Text style={styles.aiButtonText}>
+                      {isTranslating ? 'Translating...' : 'AI Translate'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </View>
@@ -125,6 +144,17 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 12,
   },
+  translationContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  translationText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#4B5563',
+  },
   aiButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -134,6 +164,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 16,
     alignSelf: 'flex-start',
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   aiButtonText: {
     color: '#FFF',

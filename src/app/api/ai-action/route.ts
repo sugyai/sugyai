@@ -2,20 +2,8 @@ import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-3-flash-preview';
-const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3-pro-preview';
-
-interface GeminiResponse {
-  text?: string | (() => string);
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-      }>;
-    };
-    finishReason?: string;
-  }>;
-}
+const GEMINI_MODEL = 'gemini-3.5-flash';
+const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.1-pro';
 
 async function callGemini(prompt: string) {
   if (!GEMINI_API_KEY) {
@@ -30,25 +18,17 @@ async function callGemini(prompt: string) {
       model: GEMINI_MODEL,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
-        temperature: 0.1, // Lower temperature for more focused/complete output
+        temperature: 0.1,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 8192, // Significantly increased
+        maxOutputTokens: 8192,
       },
     });
 
-    const responseData = response as unknown as GeminiResponse;
-    let resultText = '';
+    // The @google/genai v2 SDK provides a .text property on the response
+    const resultText = response.text || '';
     
-    if (typeof responseData.text === 'string') {
-      resultText = responseData.text;
-    } else if (typeof responseData.text === 'function') {
-      resultText = responseData.text();
-    } else if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) {
-      resultText = responseData.candidates[0].content.parts[0].text;
-    }
-
-    console.log(`[AI] ${GEMINI_MODEL} request completed. Response length: ${resultText.length} chars. Finish Reason: ${responseData.candidates?.[0]?.finishReason || 'unknown'}`);
+    console.log(`[AI] ${GEMINI_MODEL} request completed. Response length: ${resultText.length} chars.`);
     
     if (resultText.length < 100 && prompt.length > 500) {
        console.warn(`[AI] Warning: Response seems unusually short (${resultText.length} chars) compared to prompt (${prompt.length} chars).`);
@@ -58,7 +38,12 @@ async function callGemini(prompt: string) {
   } catch (error: unknown) {
     const err = error as { message?: string };
     console.warn(`Primary model ${GEMINI_MODEL} failed:`, err);
-    if ((err.message && (err.message.includes('busy') || err.message.includes('503'))) && GEMINI_FALLBACK_MODEL) {
+    
+    // Check if it's a model not found error or overloaded
+    const isModelError = err.message && (err.message.includes('not found') || err.message.includes('404'));
+    const isBusyError = err.message && (err.message.includes('busy') || err.message.includes('503') || err.message.includes('overloaded'));
+
+    if ((isBusyError || isModelError) && GEMINI_FALLBACK_MODEL) {
       console.log(`[AI] Attempting to use fallback model: ${GEMINI_FALLBACK_MODEL}`);
       try {
         const fallbackAi = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
@@ -73,17 +58,7 @@ async function callGemini(prompt: string) {
           },
         });
         
-        const fallbackData = fallbackResponse as unknown as GeminiResponse;
-        let fallbackResult = '';
-        
-        if (typeof fallbackData.text === 'string') {
-          fallbackResult = fallbackData.text;
-        } else if (typeof fallbackData.text === 'function') {
-          fallbackResult = fallbackData.text();
-        } else if (fallbackData.candidates?.[0]?.content?.parts?.[0]?.text) {
-          fallbackResult = fallbackData.candidates[0].content.parts[0].text;
-        }
-
+        const fallbackResult = fallbackResponse.text || '';
         console.log(`[AI] Fallback model ${GEMINI_FALLBACK_MODEL} completed. Response length: ${fallbackResult.length} chars.`);
         return fallbackResult;
       } catch (fallbackError) {

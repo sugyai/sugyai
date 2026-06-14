@@ -7,10 +7,13 @@ interface AppState {
   data: SefariaTextResponse | null;
   isLoading: boolean;
   error: string | null;
+  aiTranslations: Record<string, string>;
+  translatingRefs: Record<string, boolean>;
   
   setCurrentRef: (ref: string) => void;
   setActiveSegmentIndex: (index: number) => void;
   loadPage: (ref: string) => Promise<void>;
+  handleAiTranslate: (ref: string, text: string, context: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -19,6 +22,8 @@ export const useStore = create<AppState>((set, get) => ({
   data: null,
   isLoading: false,
   error: null,
+  aiTranslations: {},
+  translatingRefs: {},
 
   setCurrentRef: (ref) => set({ currentRef: ref }),
   setActiveSegmentIndex: (index) => set({ activeSegmentIndex: index }),
@@ -31,6 +36,38 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (err) {
       set({ error: 'Failed to load page', isLoading: false });
       console.error(err);
+    }
+  },
+
+  handleAiTranslate: async (ref, text, context) => {
+    if (get().aiTranslations[ref]) return;
+    
+    set(state => ({ 
+      translatingRefs: { ...state.translatingRefs, [ref]: true } 
+    }));
+
+    try {
+      // In a real app, this would be a configurable API endpoint
+      // For development, we use the local Next.js API route
+      // Using a placeholder that the user can update if needed
+      const response = await fetch('http://localhost:3000/api/ai-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'translate', text, context })
+      });
+      
+      const resData = await response.json();
+      if (resData.result) {
+        set(state => ({
+          aiTranslations: { ...state.aiTranslations, [ref]: resData.result }
+        }));
+      }
+    } catch (err) {
+      console.error('AI Translation failed:', err);
+    } finally {
+      set(state => ({
+        translatingRefs: { ...state.translatingRefs, [ref]: false }
+      }));
     }
   },
 }));
