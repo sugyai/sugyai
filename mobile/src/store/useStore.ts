@@ -50,8 +50,9 @@ export const useStore = create<AppState>((set, get) => ({
     }));
 
     try {
-      // In a real app, this would be a configurable API endpoint
-      const response = await fetch('http://localhost:3000/api/ai-action', {
+      // Use the production URL for the live site, fallback to localhost for development
+      const API_BASE = 'https://sugy-ai-65095948.a.run.app'; // Your Cloud Run URL
+      const response = await fetch(`${API_BASE}/api/ai-action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'translate', text, context })
