@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { getTalmudText, SefariaTextResponse, SefariaCommentary, deTransliterate, extractDivreiHamaschil, getHebrewBooksUrl } from '@/lib/sefaria';
+import { getTalmudText, SefariaTextResponse, SefariaCommentary, deTransliterate, extractDivreiHamaschil, getHebrewBooksUrl, isValidRef, TRACTATE_MAX_DAF } from '@/lib/sefaria';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -107,10 +107,12 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
     // 2. Check localStorage for ref
     const savedRef = localStorage.getItem('sugyai_current_ref');
     
-    if (urlRef) {
+    if (urlRef && isValidRef(urlRef)) {
       setCurrentRef(urlRef);
-    } else if (savedRef) {
+    } else if (savedRef && isValidRef(savedRef)) {
       setCurrentRef(savedRef);
+    } else {
+      setCurrentRef(initialRef);
     }
 
     // 3. Load AI translations
@@ -122,11 +124,11 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
         console.error('Failed to parse saved translations', e);
       }
     }
-  }, []);
+  }, [initialRef]);
 
   // Sync currentRef to URL and localStorage
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || !isValidRef(currentRef)) return;
     
     // Save to localStorage
     localStorage.setItem('sugyai_current_ref', currentRef);
@@ -183,6 +185,12 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
 
   useEffect(() => {
     async function fetchData() {
+      if (!isValidRef(currentRef)) {
+        setError(`"${currentRef}" is not a valid Talmud reference.`);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const result = await getTalmudText(currentRef);
@@ -300,6 +308,13 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
   const navigateToRef = () => {
     handleInteraction();
     const newRef = `${pickerTractate} ${pickerDaf}${pickerSide}`;
+    
+    if (!isValidRef(newRef)) {
+      const max = TRACTATE_MAX_DAF[pickerTractate] || '??';
+      alert(`Invalid reference: ${pickerTractate} only goes up to daf ${max}.`);
+      return;
+    }
+
     setCurrentRef(newRef);
     setShowPicker(false);
   };
@@ -428,10 +443,22 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
                     handleInteraction();
                     const match = currentRef.match(/^(.*?)\s(\d+)([ab])$/);
                     if (match) {
+                        const tractate = match[1];
                         const daf = parseInt(match[2]);
                         const side = match[3];
-                        if (side === 'a') setCurrentRef(`${match[1]} ${daf}b`);
-                        else setCurrentRef(`${match[1]} ${daf+1}a`);
+                        
+                        let nextRef = '';
+                        if (side === 'a') {
+                            nextRef = `${tractate} ${daf}b`;
+                        } else {
+                            nextRef = `${tractate} ${daf+1}a`;
+                        }
+
+                        if (isValidRef(nextRef)) {
+                            setCurrentRef(nextRef);
+                        } else {
+                            alert(`You've reached the end of ${tractate}.`);
+                        }
                     }
                 }}
                 className="p-1 lg:p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-amber-600 transition-colors"
@@ -509,9 +536,21 @@ export default function TalmudViewer({ initialRef = 'Berakhot 2a', onInteract }:
       )}
 
       {error && (
-        <div className="m-6 p-4 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-xl border border-red-100 dark:border-red-900/50 flex justify-between items-center">
+        <div className="m-6 p-4 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-xl border border-red-100 dark:border-red-900/50 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="text-sm font-medium">{error}</span>
-            <button onClick={() => setError(null)} className="text-xs font-bold uppercase tracking-widest">Dismiss</button>
+            <div className="flex gap-3">
+                <button 
+                  onClick={() => {
+                    handleInteraction();
+                    setCurrentRef('Berakhot 2a');
+                    setError(null);
+                  }} 
+                  className="text-xs font-black uppercase tracking-widest bg-white dark:bg-zinc-800 px-3 py-1.5 rounded-md border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                >
+                  Reset to Berakhot 2a
+                </button>
+                <button onClick={() => setError(null)} className="text-xs font-bold uppercase tracking-widest opacity-50 hover:opacity-100">Dismiss</button>
+            </div>
         </div>
       )}
 

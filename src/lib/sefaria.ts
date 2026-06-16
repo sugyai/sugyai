@@ -119,6 +119,23 @@ const HB_TRACTATE_MAP: Record<string, number> = {
   'Berakhot': 1, 'Shabbat': 2, 'Eruvin': 3, 'Pesachim': 4, 'Shekalim': 5, 'Yoma': 6, 'Sukkah': 7, 'Beitzah': 8, 'Rosh_Hashanah': 9, 'Taanit': 10, 'Megillah': 11, 'Moed_Katan': 12, 'Chagigah': 13, 'Yevamot': 14, 'Ketubot': 15, 'Nedarim': 16, 'Nazir': 17, 'Sotah': 18, 'Gittin': 19, 'Kiddushin': 20, 'Bava_Kamma': 21, 'Bava_Metzia': 22, 'Bava_Batra': 23, 'Sanhedrin': 24, 'Makkot': 25, 'Shevuot': 26, 'Avodah_Zarah': 27, 'Horayot': 28, 'Zevachim': 29, 'Menachot': 30, 'Chullin': 31, 'Bekhorot': 32, 'Arakhin': 33, 'Temurah': 34, 'Keritot': 35, 'Meilah': 36, 'Tamid': 37, 'Middot': 38, 'Kinnim': 39, 'Niddah': 40
 };
 
+export const TRACTATE_MAX_DAF: Record<string, number> = {
+  'Berakhot': 64, 'Shabbat': 157, 'Eruvin': 105, 'Pesachim': 121, 'Shekalim': 22, 'Yoma': 88, 'Sukkah': 56, 'Beitzah': 40, 'Rosh Hashanah': 35, 'Taanit': 31, 'Megillah': 32, 'Moed Katan': 29, 'Chagigah': 27, 'Yevamot': 122, 'Ketubot': 112, 'Nedarim': 91, 'Nazir': 66, 'Sotah': 49, 'Gittin': 90, 'Kiddushin': 82, 'Bava Kamma': 119, 'Bava Metzia': 119, 'Bava Batra': 176, 'Sanhedrin': 113, 'Makkot': 24, 'Shevuot': 49, 'Avodah Zarah': 76, 'Horayot': 14, 'Zevachim': 120, 'Menachot': 110, 'Chullin': 142, 'Bekhorot': 61, 'Arakhin': 34, 'Temurah': 34, 'Keritot': 28, 'Meilah': 22, 'Tamid': 33, 'Niddah': 73
+};
+
+export function isValidRef(ref: string): boolean {
+  const match = ref.match(/^(.*?)\s(\d+)([ab])$/);
+  if (!match) return false;
+
+  const tractate = match[1];
+  const daf = parseInt(match[2]);
+  
+  const maxDaf = TRACTATE_MAX_DAF[tractate];
+  if (!maxDaf) return true; // Allow if we don't have metadata yet
+
+  return daf >= 2 && daf <= maxDaf;
+}
+
 export function getHebrewBooksUrl(ref: string): string | null {
   // Expected format: "Tractate 2a"
   const match = ref.match(/^(.*?)\s(\d+)([ab])$/);
